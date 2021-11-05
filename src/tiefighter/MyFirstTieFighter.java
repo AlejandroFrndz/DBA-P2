@@ -15,7 +15,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     Status mystatus;
-    String service = "PManager", problem = "Dagobah",
+    String service = "PManager", problem = "Abafar",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -23,10 +23,12 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     mySensors = new String[] {
         "THERMAL",
         "GPS",
-        "LIDAR"
+        "LIDAR",
+        "ALTITUDE"
     };
     boolean step = false;
     int tieOrientation = 0;
+    int phase = 0;
     
 
     @Override
@@ -126,10 +128,10 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
-    private int getMinPosOrientation(int[][] thermal) {
+    private int getMinPosOrientation(int[][] thermal, int[][] lidar) {
         int minReading = thermal[5][5];
         int ori = 0, finalOri = 0;
-        int finali, finalj;
+        int finali = 0, finalj = 0;
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
@@ -145,6 +147,9 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         
+        if(lidar[finali][finalj] < 0){
+            return -1;
+        }
         switch(enumValue){
             case NO:
                 return 135;
@@ -181,31 +186,48 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         int[][] thermal = myDashboard.getThermal();
         int[][] lidar = myDashboard.getLidar();
+        int altitude = myDashboard.getAltitude();
         
         session = session.createReply();
         String action = "";
         
-        if(thermal[5][5] == 0){
-            action = "CAPTURE";
+        if(phase == 0){
+            action = "RECHARGE";
+            phase++;
         }
-        else {
-            int ori = getMinPosOrientation(thermal);
-            if(ori != tieOrientation){
-                if(ori <= 180){
-                    action = "LEFT";
-                    tieOrientation += 45;
-                    tieOrientation = tieOrientation % 360;
-                }
-                else{
-                    action = "RIGHT";
-                    tieOrientation -= 45;
-                    tieOrientation = tieOrientation % 360;
-                }
+        else{
+        if(thermal[5][5] == 0){
+            if(altitude > 0){
+                action = "DOWN";
             }
             else{
-                action = "MOVE";
+                action = "CAPTURE";
             }
-            
+        }
+            else {
+                int ori = getMinPosOrientation(thermal,lidar);
+                if(ori < 0){
+                    action = "UP";
+                }
+                else{
+                    if(ori != tieOrientation){
+                        if(ori <= 180){
+                            action = "LEFT";
+                            tieOrientation += 45;
+                            tieOrientation = tieOrientation % 360;
+                        }
+                        else{
+                            action = "RIGHT";
+                            tieOrientation -= 45;
+                            tieOrientation = tieOrientation % 360;
+                        }
+                    }
+                    else{
+                        action = "MOVE";
+                    }
+                }
+
+            }
         }
         
         session.setContent("Request execute " + action + " session " + sessionKey);
