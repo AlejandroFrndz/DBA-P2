@@ -15,7 +15,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     Status mystatus;
-    String service = "PManager", problem = "Abafar",
+    String service = "PManager", problem = "Dathomir",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -24,7 +24,9 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         "THERMAL",
         "GPS",
         "LIDAR",
-        "ALTITUDE"
+        "ALTITUDE",
+        "ENERGY",
+        "ANGULAR"
     };
     boolean step = false;
     int tieOrientation = 0;
@@ -132,21 +134,70 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         int minReading = thermal[5][5];
         int ori = 0, finalOri = 0;
         int finali = 0, finalj = 0;
+        boolean cambia = false;
+        int value = thermal[4][4];
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if(thermal[i][j] < minReading){
+                if((i != 5 || j != 5) && thermal[i][j] < minReading){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
                     finalj = j;
                 }
                 ori++;
+                if(value != thermal[i][j]){
+                    cambia = true;
+                }
             }
         }
         
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         
+        if(!cambia){
+            double angular = myDashboard.getAngular();
+            
+            if(angular >= 0 && angular < 45){
+                enumValue = OrientationLoop.E;
+                finali = 5;
+                finalj = 6;
+            }
+            else if(angular >= 45 && angular < 90){
+                enumValue = OrientationLoop.NE;
+                finali = 4;
+                finalj = 6;
+            }
+            else if(angular >= 90 && angular < 135){
+                enumValue = OrientationLoop.N;
+                finali = 4;
+                finalj = 5;
+            }
+            else if(angular >= 135 && angular < 180){
+                enumValue = OrientationLoop.NO;
+                finali = 4;
+                finalj = 4;
+            }
+            else if(angular >= 180 && angular < 225){
+                enumValue = OrientationLoop.O;
+                finali = 5;
+                finalj = 4;
+            }
+            else if(angular >= 225 && angular < 270){
+                enumValue = OrientationLoop.SO;
+                finali = 6;
+                finalj = 4;
+            }
+            else if(angular >= 270 && angular < 315){
+                enumValue = OrientationLoop.S;
+                finali = 6;
+                finalj = 5;
+            }
+            else {
+                enumValue = OrientationLoop.SE;
+                finali = 6;
+                finalj = 6;
+            }
+        }
         if(lidar[finali][finalj] < 0){
             return -1;
         }
@@ -211,16 +262,17 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 }
                 else{
                     if(ori != tieOrientation){
-                        if(ori <= 180){
+                        if(ori - tieOrientation >= 0){
                             action = "LEFT";
                             tieOrientation += 45;
                             tieOrientation = tieOrientation % 360;
                         }
                         else{
                             action = "RIGHT";
-                            tieOrientation -= 45;
+                            tieOrientation += 315;
                             tieOrientation = tieOrientation % 360;
                         }
+
                     }
                     else{
                         action = "MOVE";
