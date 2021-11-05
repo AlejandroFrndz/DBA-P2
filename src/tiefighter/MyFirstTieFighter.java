@@ -22,9 +22,10 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     String[] contentTokens,
     mySensors = new String[] {
         "THERMAL",
-        "GPS"
+        "GPS",
+        "LIDAR"
     };
-    boolean step = true;
+    boolean step = false;
     int tieOrientation = 0;
     
 
@@ -128,12 +129,15 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     private int getMinPosOrientation(int[][] thermal) {
         int minReading = thermal[5][5];
         int ori = 0, finalOri = 0;
+        int finali, finalj;
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
                 if(thermal[i][j] < minReading){
                     minReading = thermal[i][j];
                     finalOri = ori;
+                    finali = i;
+                    finalj = j;
                 }
                 ori++;
             }
@@ -176,6 +180,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
         
         int[][] thermal = myDashboard.getThermal();
+        int[][] lidar = myDashboard.getLidar();
         
         session = session.createReply();
         String action = "";
