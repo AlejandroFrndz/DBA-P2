@@ -28,7 +28,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         "ENERGY",
         "ANGULAR"
     };
-    boolean step = false;
+    boolean step = false, recargar = false;
     int tieOrientation = 0;
     int phase = 0;
     
@@ -238,6 +238,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         int[][] thermal = myDashboard.getThermal();
         int[][] lidar = myDashboard.getLidar();
         int altitude = myDashboard.getAltitude();
+        double energy = myDashboard.getEnergy();
         
         session = session.createReply();
         String action = "";
@@ -246,15 +247,25 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             action = "RECHARGE";
             phase++;
         }
-        else{
-        if(thermal[5][5] == 0){
-            if(altitude > 0){
+        
+        else if(recargar){
+            if (lidar[5][5] == 0){
+                action = "RECHARGE";
+                recargar = false;
+            }
+            else {
                 action = "DOWN";
             }
-            else{
-                action = "CAPTURE";
-            }
         }
+        else{
+            if(thermal[5][5] == 0){
+                if(altitude > 0){
+                    action = "DOWN";
+                }
+                else{
+                    action = "CAPTURE";
+                }
+            }
             else {
                 int ori = getMinPosOrientation(thermal,lidar);
                 if(ori < 0){
@@ -280,8 +291,14 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 }
 
             }
+            
         }
         
+        double gasto = ((lidar[5][5]/5 * 10)+200);
+        if (!recargar){
+            recargar = energy < gasto;
+        }
+        System.out.println("Recargar: " + recargar + "\nGasto estimado: " + gasto);
         session.setContent("Request execute " + action + " session " + sessionKey);
         this.LARVAsend(session);
         session = this.LARVAblockingReceive();
