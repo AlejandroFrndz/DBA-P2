@@ -15,7 +15,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     Status mystatus;
-    String service = "PManager", problem = "Endor",
+    String service = "PManager", problem = "Mandalore",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -26,7 +26,8 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         "LIDAR",
         "ALTITUDE",
         "ENERGY",
-        "ANGULAR"
+        "ANGULAR",
+        "VISUAL"
     };
     boolean step = false, recargar = false;
     int tieOrientation = 0;
@@ -130,7 +131,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
-    private int getMinPosOrientation(int[][] thermal, int[][] lidar) {
+    private int getMinPosOrientation(int[][] thermal, int[][] lidar, int [][]visual) {
         int minReading = thermal[5][5];
         int ori = 0, finalOri = 0;
         int finali = 0, finalj = 0;
@@ -139,7 +140,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if((i != 5 || j != 5) && thermal[i][j] < minReading){
+                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0) &&(visual[i][j]<maxFlight) ){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
@@ -153,10 +154,8 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
         
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
-        
-        if(!cambia){
-            double angular = myDashboard.getAngular();
-            
+        double angular = myDashboard.getAngular();
+        if(!cambia){  
             if(angular >= 0 && angular < 45){
                 enumValue = OrientationLoop.E;
                 finali = 5;
@@ -198,6 +197,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 finalj = 6;
             }
         }
+        //System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular);
         if(lidar[finali][finalj] < 0){
             return -1;
         }
@@ -240,6 +240,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         int altitude = myDashboard.getAltitude();
         double energy = myDashboard.getEnergy();
         double[] gps = myDashboard.getGPS();
+        int [][] visual = myDashboard.getVisual();
         
         session = session.createReply();
         String action = "";
@@ -268,13 +269,14 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 }
             }
             else {
-                int ori = getMinPosOrientation(thermal,lidar);
-                if(ori < 0 && gps[1] < maxFlight){
+                int ori = getMinPosOrientation(thermal,lidar,visual);
+                //System.out.println("Resultado funcion: " + ori);
+                if((ori < 0) && (gps[1] < maxFlight)){
                     action = "UP";
                 }
                 else{
                     if(ori != tieOrientation){
-                        if(ori - tieOrientation >= 0){
+                        if((ori - tieOrientation) >= 0){
                             action = "LEFT";
                             tieOrientation += 45;
                             tieOrientation = tieOrientation % 360;
@@ -295,7 +297,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             
         }
         
-        double gasto = ((lidar[5][5]/5 * 10)+200);
+        double gasto = ((lidar[5][5]/5 * mySensors.length)+200);
         if (!recargar){
             recargar = energy < gasto;
         }
