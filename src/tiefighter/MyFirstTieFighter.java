@@ -15,7 +15,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     Status mystatus;
-    String service = "PManager", problem = "Dathomir",
+    String service = "PManager", problem = "Endor",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -239,6 +239,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         int[][] lidar = myDashboard.getLidar();
         int altitude = myDashboard.getAltitude();
         double energy = myDashboard.getEnergy();
+        double[] gps = myDashboard.getGPS();
         
         session = session.createReply();
         String action = "";
@@ -268,7 +269,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             }
             else {
                 int ori = getMinPosOrientation(thermal,lidar);
-                if(ori < 0){
+                if(ori < 0 && gps[1] < maxFlight){
                     action = "UP";
                 }
                 else{
