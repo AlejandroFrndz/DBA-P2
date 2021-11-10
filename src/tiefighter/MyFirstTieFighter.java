@@ -15,7 +15,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     Status mystatus;
-    String service = "PManager", problem = "Mandalore",
+    String service = "PManager", problem = "Hoth",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -27,7 +27,8 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         "ALTITUDE",
         "ENERGY",
         "ANGULAR",
-        "VISUAL"
+        "VISUAL",
+        "COMPASS"
     };
     boolean step = false, recargar = false;
     int tieOrientation = 0;
@@ -140,7 +141,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0) &&(visual[i][j]<maxFlight) ){
+                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
@@ -156,37 +157,37 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         double angular = myDashboard.getAngular();
         if(!cambia){  
-            if(angular >= 0 && angular < 45){
+            if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
                 enumValue = OrientationLoop.E;
                 finali = 5;
                 finalj = 6;
             }
-            else if(angular >= 45 && angular < 90){
+            else if(angular >= 45 && angular < 90 && (visual[4][6] >=0)){
                 enumValue = OrientationLoop.NE;
                 finali = 4;
                 finalj = 6;
             }
-            else if(angular >= 90 && angular < 135){
+            else if(angular >= 90 && angular < 135 && (visual[4][5] >=0)){
                 enumValue = OrientationLoop.N;
                 finali = 4;
                 finalj = 5;
             }
-            else if(angular >= 135 && angular < 180){
+            else if(angular >= 135 && angular < 180 && (visual[4][4] >=0)){
                 enumValue = OrientationLoop.NO;
                 finali = 4;
                 finalj = 4;
             }
-            else if(angular >= 180 && angular < 225){
+            else if(angular >= 180 && angular < 225 && (visual[5][4] >=0)){
                 enumValue = OrientationLoop.O;
                 finali = 5;
                 finalj = 4;
             }
-            else if(angular >= 225 && angular < 270){
+            else if(angular >= 225 && angular < 270 && (visual[6][4] >=0)){
                 enumValue = OrientationLoop.SO;
                 finali = 6;
                 finalj = 4;
             }
-            else if(angular >= 270 && angular < 315){
+            else if(angular >= 270 && angular < 315 && (visual[6][5] >=0)){
                 enumValue = OrientationLoop.S;
                 finali = 6;
                 finalj = 5;
@@ -198,7 +199,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             }
         }
         //System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular);
-        if(lidar[finali][finalj] < 0){
+        if(lidar[finali][finalj] < 0 ){
             return -1;
         }
         switch(enumValue){
@@ -241,6 +242,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         double energy = myDashboard.getEnergy();
         double[] gps = myDashboard.getGPS();
         int [][] visual = myDashboard.getVisual();
+        double compass = myDashboard.getCompass();
         
         session = session.createReply();
         String action = "";
@@ -270,11 +272,17 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             }
             else {
                 int ori = getMinPosOrientation(thermal,lidar,visual);
-                //System.out.println("Resultado funcion: " + ori);
-                if((ori < 0) && (gps[1] < maxFlight)){
+                System.out.println("Resultado funcion: " + ori);
+                if((ori < 0) && (gps[2] < maxFlight)){
                     action = "UP";
+                    System.out.println("Altura: " + gps[2]);
                 }
-                else{
+                else if (ori < 0){
+                    action = "LEFT";
+                    tieOrientation += 45;
+                    tieOrientation = tieOrientation % 360;
+                }
+                else {
                     if(ori != tieOrientation){
                         if((ori - tieOrientation) >= 0){
                             action = "LEFT";
@@ -286,7 +294,6 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                             tieOrientation += 315;
                             tieOrientation = tieOrientation % 360;
                         }
-
                     }
                     else{
                         action = "MOVE";
@@ -301,7 +308,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         if (!recargar){
             recargar = energy < gasto;
         }
-        System.out.println("Recargar: " + recargar + "\nGasto estimado: " + gasto);
+        //System.out.println("Recargar: " + recargar + "\nGasto estimado: " + gasto);
         session.setContent("Request execute " + action + " session " + sessionKey);
         this.LARVAsend(session);
         session = this.LARVAblockingReceive();
