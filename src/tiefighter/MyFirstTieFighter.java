@@ -133,7 +133,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     }
     
     private int getMinPosOrientation(int[][] thermal, int[][] lidar, int [][]visual) {
-        int minReading = thermal[5][5];
+        int minReading = thermal[5][5]+10;
         int ori = 0, finalOri = 0;
         int finali = 0, finalj = 0;
         boolean cambia = false;
@@ -141,7 +141,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)){
+                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)&& (visual[i][j] <maxFlight)){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
@@ -154,8 +154,13 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             }
         }
         
+        
+        
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         double angular = myDashboard.getAngular();
+        System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular 
+                + "\nMinReading: " + minReading + "\nVisual: " + visual[finali][finalj] 
+                + "\nLidar: " + lidar[finali][finalj]);
         if(!cambia){  
             if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
                 enumValue = OrientationLoop.E;
@@ -200,6 +205,12 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
         //System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular);
         if(lidar[finali][finalj] < 0 ){
+            /*if (visual[5][5] < maxFlight){
+                return -1;
+            }
+            else if (visual[finali][finalj] < 0){
+                
+            }*/
             return -1;
         }
         switch(enumValue){
@@ -277,11 +288,11 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                     action = "UP";
                     System.out.println("Altura: " + gps[2]);
                 }
-                else if (ori < 0){
+                /*else if (ori < 0){
                     action = "LEFT";
                     tieOrientation += 45;
                     tieOrientation = tieOrientation % 360;
-                }
+                }*/
                 else {
                     if(ori != tieOrientation){
                         if((ori - tieOrientation) >= 0){
