@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Wobani",
+    String service = "PManager", problem = "Tatooine",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
