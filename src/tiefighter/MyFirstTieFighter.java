@@ -253,10 +253,15 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 contiene = traza.get(i).compare(p);
             }
         }
-        
+
         return contiene;
     }
-    
+
+    private void aniadir(p){
+
+
+    }
+
     public Status MySolveProblem() {
         session = session.createReply();
         session.setContent("Query sensors session " + sessionKey);
