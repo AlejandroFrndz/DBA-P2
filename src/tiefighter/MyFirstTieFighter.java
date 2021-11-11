@@ -4,7 +4,7 @@ import agents.LARVAFirstAgent;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import swing.LARVADash;
-
+import java.util.ArrayList;
 public class MyFirstTieFighter extends LARVAFirstAgent{
 
     enum Status {
@@ -14,8 +14,9 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         NO,N,NE,O,X,E,SO,S,SE
     }
     
+    
     Status mystatus;
-    String service = "PManager", problem = "Hoth",
+    String service = "PManager", problem = "Mandalore",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -33,6 +34,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     boolean step = false, recargar = false;
     int tieOrientation = 0;
     int phase = 0;
+    ArrayList<Punto> traza = new ArrayList<>();
     
 
     @Override
@@ -132,16 +134,21 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
-    private int getMinPosOrientation(int[][] thermal, int[][] lidar, int [][]visual) {
+    private int getMinPosOrientation(int[][] thermal, int[][] lidar, int [][]visual, double []gps) {
         int minReading = thermal[5][5]+10;
         int ori = 0, finalOri = 0;
         int finali = 0, finalj = 0;
         boolean cambia = false;
         int value = thermal[4][4];
+        int x = (int)gps[0];
+        int y = (int) gps[1];
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)&& (visual[i][j] <maxFlight)){
+                int x1 = x + (j-5);
+                int y2 = y + (i-5);
+                Punto p = new Punto(x1,y2);
+                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)&& (visual[i][j] <=maxFlight) && !contiene(p)){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
@@ -160,7 +167,8 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         double angular = myDashboard.getAngular();
         System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular 
                 + "\nMinReading: " + minReading + "\nVisual: " + visual[finali][finalj] 
-                + "\nLidar: " + lidar[finali][finalj]);
+                + "\nLidar: " + lidar[finali][finalj]
+                + "\nNumero traza: " + traza.size());
         if(!cambia){  
             if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
                 enumValue = OrientationLoop.E;
@@ -237,6 +245,18 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
+    private boolean contiene(Punto p){
+        boolean contiene = false;
+        
+        for(int i = 0; i < traza.size(); i++){
+            if (!contiene){
+                contiene = traza.get(i).compare(p);
+            }
+        }
+        
+        return contiene;
+    }
+    
     public Status MySolveProblem() {
         session = session.createReply();
         session.setContent("Query sensors session " + sessionKey);
@@ -257,6 +277,14 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         session = session.createReply();
         String action = "";
+        
+        Punto p;
+        p = new Punto((int)gps[0], (int)gps[1]);
+        
+        if (!contiene(p)){
+            traza.add(p);
+            System.out.println("Se inserta punto: " + gps[0] + " , " + gps[1]);
+        }
         
         if(phase == 0){
             action = "RECHARGE";
@@ -282,7 +310,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 }
             }
             else {
-                int ori = getMinPosOrientation(thermal,lidar,visual);
+                int ori = getMinPosOrientation(thermal,lidar,visual, gps);
                 System.out.println("Resultado funcion: " + ori);
                 if((ori < 0) && (gps[2] < maxFlight)){
                     action = "UP";
