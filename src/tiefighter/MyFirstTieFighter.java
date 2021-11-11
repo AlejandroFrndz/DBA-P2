@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Tatooine",
+    String service = "PManager", problem = "Mandalore",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -35,6 +35,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     int tieOrientation = 0;
     int phase = 0;
     ArrayList<Punto> traza = new ArrayList<>();
+    int maxTraza = 500;
     
 
     @Override
@@ -257,9 +258,15 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         return contiene;
     }
 
-    private void aniadir(p){
+    private void aniadir(Punto p){
+        if (!contiene(p)){
+            if (traza.size() >= maxTraza){
+                traza.remove(0);
+            }
 
-
+            traza.add(p);
+            System.out.println("Se inserta punto: " + p.x + " , " + p.y);
+        }
     }
 
     public Status MySolveProblem() {
@@ -285,11 +292,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         Punto p;
         p = new Punto((int)gps[0], (int)gps[1]);
-        
-        if (!contiene(p)){
-            traza.add(p);
-            System.out.println("Se inserta punto: " + gps[0] + " , " + gps[1]);
-        }
+        aniadir(p);
         
         if(phase == 0){
             action = "RECHARGE";
