@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Hoth",
+    String service = "PManager", problem = "Tatooine",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -143,17 +143,29 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         int value = thermal[4][4];
         int x = (int)gps[0];
         int y = (int) gps[1];
+        ArrayList<Punto> candidatos = new ArrayList<>();
+        
+        for(int i = 0; i < 9; i++){
+            candidatos.add(null);
+        }
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
                 int x1 = x + (j-5);
                 int y2 = y + (i-5);
                 Punto p = new Punto(x1,y2);
-                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)&& (visual[i][j] <=maxFlight) && !contiene(p)){
-                    minReading = thermal[i][j];
-                    finalOri = ori;
-                    finali = i;
-                    finalj = j;
+                if((i != 5 || j != 5) && (thermal[i][j] <= minReading) && (visual[i][j] >=0)&& (visual[i][j] <= maxFlight) && !contiene(p)){
+                    Punto p2 = new Punto(i,j);
+                    if(thermal[i][j] < minReading){
+                        for(int index = 0; index < candidatos.size(); index++){
+                            candidatos.set(index,null);
+                        }
+                        minReading = thermal[i][j];
+                        finalOri = ori;
+                        finali = i;
+                        finalj = j;
+                    }
+                    candidatos.set(ori, p2);
                 }
                 ori++;
                 if(value != thermal[i][j]){
@@ -162,7 +174,21 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             }
         }
         
-        
+        System.out.println("Candidatos");
+        int pasos, minPasos = 100;
+        for(int i = 0; i < candidatos.size(); i++){
+            if(candidatos.get(i) != null){
+                System.out.println("Candidato: " + candidatos.get(i).x + " , " + candidatos.get(i).y);
+                pasos = numPasos(i);
+                if(pasos < minPasos){
+                    minPasos = pasos;
+                    finali = candidatos.get(i).x;
+                    finalj = candidatos.get(i).y;
+                    finalOri = i;
+                }
+                
+            }
+        }
         
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         double angular = myDashboard.getAngular();
@@ -212,16 +238,11 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 finalj = 6;
             }
         }
-        //System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular);
+        
         if(lidar[finali][finalj] < 0 ){
-            /*if (visual[5][5] < maxFlight){
-                return -1;
-            }
-            else if (visual[finali][finalj] < 0){
-                
-            }*/
             return -1;
         }
+        
         switch(enumValue){
             case NO:
                 return 135;
@@ -243,6 +264,49 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             case X:
             default:
                 return 0;
+        }
+    }
+    
+    private int numPasos(int ori){
+        int mappedOri;
+        OrientationLoop enumOri = OrientationLoop.values()[ori];
+        
+        switch(enumOri){
+            case NO:
+                mappedOri = 135;
+                break;
+            case N:
+                mappedOri = 90;
+                break;
+            case NE:
+                mappedOri = 45;
+                break;
+            case O:
+                mappedOri = 180;
+                break;
+            case E:
+                mappedOri = 0;
+                break;
+            case SO:
+                mappedOri = 225;
+                break;
+            case S:
+                mappedOri = 270;
+                break;
+            case SE:
+                mappedOri = 315;
+                break;
+                
+            case X:
+            default:
+                mappedOri = 0;
+        }
+        
+        if(mappedOri == tieOrientation){
+            return 0;
+        } else {
+            int diff = Math.abs(mappedOri - tieOrientation);
+            return diff/45;
         }
     }
     
