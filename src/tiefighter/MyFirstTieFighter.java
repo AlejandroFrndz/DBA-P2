@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Mandalore",
+    String service = "PManager", problem = "Hoth",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -285,7 +285,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         double energy = myDashboard.getEnergy();
         double[] gps = myDashboard.getGPS();
         int [][] visual = myDashboard.getVisual();
-        double compass = myDashboard.getCompass();
+        // Comisionado para la interfaz pero no es necesario double compass = myDashboard.getCompass();
         
         session = session.createReply();
         String action = "";
@@ -370,60 +370,6 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         return Status.SOLVEPROBLEM;
     }
-    
-        //Este resuelve el problema con el angular + onTarget
-    /*public Status MySolveProblem() {
-        session = session.createReply();
-        session.setContent("Query sensors session " + sessionKey);
-        this.LARVAsend(session);
-        session = this.LARVAblockingReceive();
-        if(session.getContent().startsWith("Refuse") || session.getContent().startsWith("Failure")){
-            Alert("Reading of sensors failed due to " + session.getContent());
-            return Status.CLOSEPROBLEM;
-        }
-        
-        double angular = myDashboard.getAngular();
-        boolean onTarget = myDashboard.getOnTarget();
-        
-        session = session.createReply();
-        String action = "";
-        
-        if(onTarget){
-            action = "CAPTURE";
-        }
-        else if(tieOrientation != angular){
-            if(angular <= 180){
-                action = "LEFT";
-                tieOrientation += 45;
-                tieOrientation = tieOrientation % 360;
-            }
-            else{
-                action = "RIGHT";
-                tieOrientation -= 45;
-                tieOrientation = tieOrientation % 360;
-            }
-            action = "RIGHT";
-        }
-        else {
-            action = "MOVE";
-        }
-        
-        Info("Orientacion: " + tieOrientation);
-        session.setContent("Request execute " + action + " session " + sessionKey);
-        this.LARVAsend(session);
-        session = this.LARVAblockingReceive();
-        if(session.getContent().startsWith("Refuse") || session.getContent().startsWith("Failure")){
-            Alert("Reading of sensors failed due to " + session.getContent());
-            return Status.CLOSEPROBLEM;
-        }
-        
-        if(action.equals("CAPTURE")){
-            return Status.CLOSEPROBLEM;
-        }
-        
-        return Status.SOLVEPROBLEM;
-    }
-    */
     
     public Status MyCloseProblem() {
         outbox = open.createReply();
