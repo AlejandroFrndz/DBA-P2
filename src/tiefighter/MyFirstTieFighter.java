@@ -333,6 +333,22 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
 
+    private boolean WithOutSolution(int thermal[][], int visual[][]){
+        boolean noSolution = false;
+        boolean stop = false;
+        for(int i = 0 ; i < thermal.length && !stop;i++){
+            for (int j = 0; j < thermal.length;j++){
+                if(thermal[i][j] == 0){
+                    if(visual[i][j] == 255){
+                        noSolution = true;
+                        stop = true;
+                    }
+                }
+            }  
+        }
+        return noSolution;
+    }
+    
     public Status MySolveProblem() {
         session = session.createReply();
         session.setContent("Query sensors session " + sessionKey);
@@ -357,6 +373,11 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         Punto p;
         p = new Punto((int)gps[0], (int)gps[1]);
         aniadir(p);
+        
+        if(WithOutSolution(thermal,visual)){
+           System.out.println("El mundo no tiene solucion");
+           return Status.CLOSEPROBLEM; 
+        }
         
         if(phase == 0){
             action = "RECHARGE";
