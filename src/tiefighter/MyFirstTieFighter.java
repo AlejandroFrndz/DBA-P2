@@ -4,7 +4,7 @@ import agents.LARVAFirstAgent;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import swing.LARVADash;
-
+import java.util.ArrayList;
 public class MyFirstTieFighter extends LARVAFirstAgent{
 
     enum Status {
@@ -14,8 +14,9 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         NO,N,NE,O,X,E,SO,S,SE
     }
     
+    
     Status mystatus;
-    String service = "PManager", problem = "Dagobah",
+    String service = "PManager", problem = "Hoth",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -23,10 +24,18 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     mySensors = new String[] {
         "THERMAL",
         "GPS",
-        "LIDAR"
+        "LIDAR",
+        "ALTITUDE",
+        "ENERGY",
+        "ANGULAR",
+        "VISUAL",
+        "COMPASS"
     };
-    boolean step = false;
+    boolean step = false, recargar = false;
     int tieOrientation = 0;
+    int phase = 0;
+    ArrayList<Punto> traza = new ArrayList<>();
+    int maxTraza = 500;
     
 
     @Override
@@ -126,25 +135,93 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
-    private int getMinPosOrientation(int[][] thermal) {
-        int minReading = thermal[5][5];
+    private int getMinPosOrientation(int[][] thermal, int[][] lidar, int [][]visual, double []gps) {
+        int minReading = thermal[5][5]+10;
         int ori = 0, finalOri = 0;
-        int finali, finalj;
+        int finali = 0, finalj = 0;
+        boolean cambia = false;
+        int value = thermal[4][4];
+        int x = (int)gps[0];
+        int y = (int) gps[1];
         
         for(int i = 4; i < 7; i++){
             for(int j = 4; j < 7; j++){
-                if(thermal[i][j] < minReading){
+                int x1 = x + (j-5);
+                int y2 = y + (i-5);
+                Punto p = new Punto(x1,y2);
+                if((i != 5 || j != 5) && (thermal[i][j] < minReading) && (visual[i][j] >=0)&& (visual[i][j] <=maxFlight) && !contiene(p)){
                     minReading = thermal[i][j];
                     finalOri = ori;
                     finali = i;
                     finalj = j;
                 }
                 ori++;
+                if(value != thermal[i][j]){
+                    cambia = true;
+                }
             }
         }
         
-        OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         
+        
+        OrientationLoop enumValue = OrientationLoop.values()[finalOri];
+        double angular = myDashboard.getAngular();
+        System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular 
+                + "\nMinReading: " + minReading + "\nVisual: " + visual[finali][finalj] 
+                + "\nLidar: " + lidar[finali][finalj]
+                + "\nNumero traza: " + traza.size());
+        if(!cambia){  
+            if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
+                enumValue = OrientationLoop.E;
+                finali = 5;
+                finalj = 6;
+            }
+            else if(angular >= 45 && angular < 90 && (visual[4][6] >=0)){
+                enumValue = OrientationLoop.NE;
+                finali = 4;
+                finalj = 6;
+            }
+            else if(angular >= 90 && angular < 135 && (visual[4][5] >=0)){
+                enumValue = OrientationLoop.N;
+                finali = 4;
+                finalj = 5;
+            }
+            else if(angular >= 135 && angular < 180 && (visual[4][4] >=0)){
+                enumValue = OrientationLoop.NO;
+                finali = 4;
+                finalj = 4;
+            }
+            else if(angular >= 180 && angular < 225 && (visual[5][4] >=0)){
+                enumValue = OrientationLoop.O;
+                finali = 5;
+                finalj = 4;
+            }
+            else if(angular >= 225 && angular < 270 && (visual[6][4] >=0)){
+                enumValue = OrientationLoop.SO;
+                finali = 6;
+                finalj = 4;
+            }
+            else if(angular >= 270 && angular < 315 && (visual[6][5] >=0)){
+                enumValue = OrientationLoop.S;
+                finali = 6;
+                finalj = 5;
+            }
+            else {
+                enumValue = OrientationLoop.SE;
+                finali = 6;
+                finalj = 6;
+            }
+        }
+        //System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular);
+        if(lidar[finali][finalj] < 0 ){
+            /*if (visual[5][5] < maxFlight){
+                return -1;
+            }
+            else if (visual[finali][finalj] < 0){
+                
+            }*/
+            return -1;
+        }
         switch(enumValue){
             case NO:
                 return 135;
@@ -169,6 +246,29 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
     }
     
+    private boolean contiene(Punto p){
+        boolean contiene = false;
+        
+        for(int i = 0; i < traza.size(); i++){
+            if (!contiene){
+                contiene = traza.get(i).compare(p);
+            }
+        }
+
+        return contiene;
+    }
+
+    private void aniadir(Punto p){
+        if (!contiene(p)){
+            if (traza.size() >= maxTraza){
+                traza.remove(0);
+            }
+
+            traza.add(p);
+            System.out.println("Se inserta punto: " + p.x + " , " + p.y);
+        }
+    }
+
     public Status MySolveProblem() {
         session = session.createReply();
         session.setContent("Query sensors session " + sessionKey);
@@ -181,33 +281,81 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         int[][] thermal = myDashboard.getThermal();
         int[][] lidar = myDashboard.getLidar();
+        int altitude = myDashboard.getAltitude();
+        double energy = myDashboard.getEnergy();
+        double[] gps = myDashboard.getGPS();
+        int [][] visual = myDashboard.getVisual();
+        // Comisionado para la interfaz pero no es necesario double compass = myDashboard.getCompass();
         
         session = session.createReply();
         String action = "";
         
-        if(thermal[5][5] == 0){
-            action = "CAPTURE";
+        Punto p;
+        p = new Punto((int)gps[0], (int)gps[1]);
+        aniadir(p);
+        
+        if(phase == 0){
+            action = "RECHARGE";
+            phase++;
         }
-        else {
-            int ori = getMinPosOrientation(thermal);
-            if(ori != tieOrientation){
-                if(ori <= 180){
+        
+        else if(recargar){
+            if (lidar[5][5] == 0){
+                action = "RECHARGE";
+                recargar = false;
+            }
+            else {
+                action = "DOWN";
+            }
+        }
+        else{
+            if(thermal[5][5] == 0){
+                if(altitude > 0){
+                    action = "DOWN";
+                }
+                else{
+                    action = "CAPTURE";
+                }
+            }
+            else {
+                int ori = getMinPosOrientation(thermal,lidar,visual, gps);
+                System.out.println("Resultado funcion: " + ori);
+                if((ori < 0) && (gps[2] < maxFlight)){
+                    action = "UP";
+                    System.out.println("Altura: " + gps[2]);
+                }
+                /*else if (ori < 0){
                     action = "LEFT";
                     tieOrientation += 45;
                     tieOrientation = tieOrientation % 360;
+                }*/
+                else {
+                    if(ori != tieOrientation){
+                        if((ori - tieOrientation) >= 0){
+                            action = "LEFT";
+                            tieOrientation += 45;
+                            tieOrientation = tieOrientation % 360;
+                        }
+                        else{
+                            action = "RIGHT";
+                            tieOrientation += 315;
+                            tieOrientation = tieOrientation % 360;
+                        }
+                    }
+                    else{
+                        action = "MOVE";
+                    }
                 }
-                else{
-                    action = "RIGHT";
-                    tieOrientation -= 45;
-                    tieOrientation = tieOrientation % 360;
-                }
-            }
-            else{
-                action = "MOVE";
+
             }
             
         }
         
+        double gasto = ((lidar[5][5]/5 * mySensors.length)+200);
+        if (!recargar){
+            recargar = energy < gasto;
+        }
+        //System.out.println("Recargar: " + recargar + "\nGasto estimado: " + gasto);
         session.setContent("Request execute " + action + " session " + sessionKey);
         this.LARVAsend(session);
         session = this.LARVAblockingReceive();
@@ -222,60 +370,6 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         return Status.SOLVEPROBLEM;
     }
-    
-        //Este resuelve el problema con el angular + onTarget
-    /*public Status MySolveProblem() {
-        session = session.createReply();
-        session.setContent("Query sensors session " + sessionKey);
-        this.LARVAsend(session);
-        session = this.LARVAblockingReceive();
-        if(session.getContent().startsWith("Refuse") || session.getContent().startsWith("Failure")){
-            Alert("Reading of sensors failed due to " + session.getContent());
-            return Status.CLOSEPROBLEM;
-        }
-        
-        double angular = myDashboard.getAngular();
-        boolean onTarget = myDashboard.getOnTarget();
-        
-        session = session.createReply();
-        String action = "";
-        
-        if(onTarget){
-            action = "CAPTURE";
-        }
-        else if(tieOrientation != angular){
-            if(angular <= 180){
-                action = "LEFT";
-                tieOrientation += 45;
-                tieOrientation = tieOrientation % 360;
-            }
-            else{
-                action = "RIGHT";
-                tieOrientation -= 45;
-                tieOrientation = tieOrientation % 360;
-            }
-            action = "RIGHT";
-        }
-        else {
-            action = "MOVE";
-        }
-        
-        Info("Orientacion: " + tieOrientation);
-        session.setContent("Request execute " + action + " session " + sessionKey);
-        this.LARVAsend(session);
-        session = this.LARVAblockingReceive();
-        if(session.getContent().startsWith("Refuse") || session.getContent().startsWith("Failure")){
-            Alert("Reading of sensors failed due to " + session.getContent());
-            return Status.CLOSEPROBLEM;
-        }
-        
-        if(action.equals("CAPTURE")){
-            return Status.CLOSEPROBLEM;
-        }
-        
-        return Status.SOLVEPROBLEM;
-    }
-    */
     
     public Status MyCloseProblem() {
         outbox = open.createReply();
