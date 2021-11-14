@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Zeffo",
+    String service = "PManager", problem = "Tatooine",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -381,7 +381,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         aniadir(p);
         
         if(WithOutSolution(thermal,visual)){
-           System.out.println("El mundo no tiene solucion");
+           Info("Jedi detected on unrecheable position. Returning to base");
            return Status.CLOSEPROBLEM; 
         }
         
@@ -465,7 +465,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     public Status MyCloseProblem() {
         outbox = open.createReply();
         outbox.setContent("Cancel session " + sessionKey);
-        Info("Closing problem Helloworld, session " + sessionKey);
+        Info("Closing problem " + problem + ", session " + sessionKey);
         this.LARVAsend(outbox);
         inbox = LARVAblockingReceive();
         Info(problemManager + " says: " + inbox.getContent());
