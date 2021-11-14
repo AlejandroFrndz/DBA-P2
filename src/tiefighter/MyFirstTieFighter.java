@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Tatooine",
+    String service = "PManager", problem = "Zeffo",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -189,7 +189,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 
             }
         }
-        
+        cambia=true;
         OrientationLoop enumValue = OrientationLoop.values()[finalOri];
         double angular = myDashboard.getAngular();
         System.out.println("Final_i: " + finali + "\nFinal_j: " + finalj + "\nAngular: " + angular 
@@ -197,6 +197,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 + "\nLidar: " + lidar[finali][finalj]
                 + "\nNumero traza: " + traza.size());
         if(!cambia){  
+            System.out.println("No cambia");
             if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
                 enumValue = OrientationLoop.E;
                 finali = 5;
@@ -232,9 +233,14 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 finali = 6;
                 finalj = 5;
             }
-            else {
+            else if (angular >= 315 && angular < 360 && (visual[6][6] >=0)){
                 enumValue = OrientationLoop.SE;
                 finali = 6;
+                finalj = 6;
+            }
+            else {
+                enumValue = OrientationLoop.E;
+                finali = 5;
                 finalj = 6;
             }
         }
@@ -405,9 +411,9 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             else {
                 int ori = getMinPosOrientation(thermal,lidar,visual, gps);
                 System.out.println("Resultado funcion: " + ori);
-                if((ori < 0) && (gps[2] < maxFlight)){
+                if((ori < 0) && (gps[2] < (maxFlight))){
                     action = "UP";
-                    System.out.println("Altura: " + gps[2]);
+                    System.out.println("Altura: " + gps[2] + "\nMaxFlight: " + maxFlight);
                 }
                 /*else if (ori < 0){
                     action = "LEFT";
@@ -513,6 +519,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
             width = Integer.parseInt(parse[8]);
             height = Integer.parseInt(parse[10]);
             maxFlight = Integer.parseInt(parse[14]);
+            maxFlight = maxFlight -(maxFlight%5);
             return Status.SOLVEPROBLEM;
         }
         else {
