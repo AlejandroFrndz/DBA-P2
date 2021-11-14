@@ -16,7 +16,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
     
     
     Status mystatus;
-    String service = "PManager", problem = "Tatooine",
+    String service = "PManager", problem = "Zeffo",
             problemManager = "", content, sessionKey, sessionManager, storeManager, sensorKeys;
     int width, height, maxFlight;
     ACLMessage open, session;
@@ -43,7 +43,6 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         super.setup();
         logger.onOverwrite();
         logger.setLoggerFileName("mylog.json");
-        this.enableDeepLARVAMonitoring();
         Info("Setup and configure agent");
         mystatus = Status.CHECKIN;
         exit = false;
@@ -196,6 +195,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
                 + "\nMinReading: " + minReading + "\nVisual: " + visual[finali][finalj] 
                 + "\nLidar: " + lidar[finali][finalj]
                 + "\nNumero traza: " + traza.size());
+        
         if(!cambia){  
             System.out.println("No cambia");
             if(angular >= 0 && angular < 45 && (visual[5][6] >=0)){
@@ -367,7 +367,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         
         int[][] thermal = myDashboard.getThermal();
         int[][] lidar = myDashboard.getLidar();
-        int altitude = myDashboard.getAltitude();
+        // Comisionado para la interfaz pero no es necesario int altitude = myDashboard.getAltitude();
         double energy = myDashboard.getEnergy();
         double[] gps = myDashboard.getGPS();
         int [][] visual = myDashboard.getVisual();
@@ -401,7 +401,7 @@ public class MyFirstTieFighter extends LARVAFirstAgent{
         }
         else{
             if(thermal[5][5] == 0){
-                if(altitude > 0){
+                if(lidar[5][5] > 0){
                     action = "DOWN";
                 }
                 else{

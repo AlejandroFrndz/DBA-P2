@@ -9,7 +9,7 @@ public class TieFighter {
         LARVABoot connection = new LARVABoot();
         
         connection.Boot("isg2.ugr.es", 1099);
-        connection.launchAgent("Hasbulla 25", MyFirstTieFighter.class);
+        connection.launchAgent("Hasbulla", MyFirstTieFighter.class);
         connection.WaitToShutDown();
        
     }
